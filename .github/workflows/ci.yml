@@ -1,0 +1,38 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cluster: [v1.12.10, v1.14.10, v1.16.9, v1.18.2]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Install cert-manager
+      run: |
+        # ref: https://github.com/cloudflare/semver_bash/blob/master/semver.sh#L3
+        RE='[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z-]*\)'
+        eval MAJOR=`echo ${{ matrix.cluster }} | sed -e "s#$RE#\1#"`
+        eval MINOR=`echo ${{ matrix.cluster }} | sed -e "s#$RE#\2#"`
+        if [ $MAJOR -eq 1 ] && [ $MINOR -lt 15 ]; then
+          echo "cert-manager-legacy.yaml"
+        else
+          echo "cert-manager.yaml"
+        fi
